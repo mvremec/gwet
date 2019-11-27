@@ -1,0 +1,711 @@
+
+#-------------------------------------------------------------
+#Definicija funkcije za izracun referencne evapotranspiracije
+#-------------------------------------------------------------
+#calculate Kcb
+Kc_ini = Kc_ini_tab= 0.15 or 0
+Kcb_mid = Kcb_mid_tab + (0.4 * (wind-2)-0.004*RHmin-45)*(h/3)**(0.3)
+Kc_end = Kc_end_tab
+
+
+
+# Kc max
+Kc_max = max((1.2+(0.4 * (wind-2)-0.004*RHmin-45)*(h/3)**(0.3)), Kcb+0.05)
+ 
+# fc
+fc = ((Kcb-Kc_min)/(Kc_max-Kc_min))**(1+0.5h)
+Kc_min = minimum KC for dry bare soil wih no ground cover
+Kcb-Kc_min>0.01
+Kc_min = 0.15
+
+
+0<fc<0.99
+
+# fw
+fw = 1 from table
+# few
+few = min(1-fc,fw)
+0.01 <fw<1
+# Kr
+if rain:
+    Kr = 1
+if Dei-1>rew: 
+    Kr = TEW-Dei-1/(TEW-REW)
+else:
+    Kr = 1
+
+# Ke
+if rain:
+    Ke =  Kr(Kc_max-Kcb)<(1-fc)*Kc_max
+Ke= Kr(Kc_max-Kcb)<few*Kc_max
+
+1.05 < Kc_max < 1.3
+
+# E
+ET0 = ...
+
+E = Ke*ET0
+Ze = 0.1-0.15
+TEW=1000*(sfc-0.5swp)*Ze
+
+# DPe
+if De<sfc:
+    DPe = (P-RO)-Dei-1
+#RO
+Ro
+number procedure
+
+# De
+Dei = De.-1-(P-RO) -+E/few*T*DPe 
+0<DEI<TEW
+# I - irriigation depth = 0
+# Kc
+Kc = Ks*Kcb+Ke
+# ETc
+ETc = Kc * ETo
+#Ks
+Ks=(TAW-Dr)/(TAW-RAW)
+if Dr<RAW:
+    Ks=1
+TAW = 1000*(sfc-swp)*Zr
+RAW=p*TAW
+p from FAO
+Zr development with a sine function(Borg and Grimes 1986)
+or exponential function of time damped by soil Temp and soil moisture(Danuso 1995)
+or full root growth simulation model (Jones 1991)
+#
+#
+#
+
+
+
+
+
+
+
+
+# fw
+fw = 1 from table
+# few
+fw = min (1-fc,fw)
+0.01 <fw<1
+# Kr
+# Ke
+W = 1/(1+fewp*(TEW-Dep)/fewi(TEW-De))
+fewp = 1- fc - fewi
+fewi = min(1-fc,fw)
+0.01 < fc < 1
+0.01 < fw < 1
+0.001 < fewp, fewi < 1 
+Ke = Krp(1-W)(Kc_max-Kcb)<fewp*Kcmax
+
+
+
+# E
+# DPe
+# De
+# I
+# Kc
+# ETc
+#
+
+
+
+
+
+
+
+def balance(precip, meteo, land_use, soil):
+    0FC = soil[""]
+    0WP = soil[""]
+    #Maximum Root Depth and Depletion factor from table 22, (163-167)
+    (should be interpolated)-(calibrated)
+    Zr = 1-1.5 m 
+    p = 0.55
+    
+    TAW = 1000*(0FC-0WP)*Zr
+    RAW = p*TAW
+    TEW = 1000*(0FC-0.5*0WP)*Ze 
+    
+    Ze = 0.10-0.15
+    # Initial depletion
+    Dr = 1000*(0FC-0measured)*Zr  
+    Dp = 0
+    De = 1000*(0FC-0.5*0WP)*Zr
+    #determine evapo
+    et0 = Et0(meteo)
+    
+    h = land_use[]
+    # Determination of water stress coefficient
+    for i in range(0, len(precip)):
+        #-------------
+        #Determination of Ke
+        De0 = De 
+        
+        ke = kr*(kcmax-kcb[i])
+        kcmax = np.maximum((1.2 + (0.04*(meteo["wind"][i]-2)-0.004*
+                    (meteo["rhmin"]-45))*(h[i]/3)**0.3),(kcb[i]+0.05))
+        
+        evapo = ke * et0[i]
+        transpo = kcb *et0[i]
+        De = De0 - (precip[i]-ro[i]) + evapo[i] + transp[i] + Dp
+        De = np.minimum(TEW, De)
+        De = np.maximum(0, De)
+        #-------------
+        
+        
+        
+        Dr0 = Dr
+        if Dr0 > RAW:
+            ks = (TAW-Dr0)/(TAW-RAW)
+        else:
+            ks = 1
+        eta = Et0 * (kcb[i] * ks + ke)
+        
+        Dp = max((precip[i]-ro[i])-eta - Dp0,0)
+        
+        Dr = Dr0 - (precip[i]-ro[i]) + eta + Dp
+        Dr = np.minimum(TAW, Dr)
+        Dr = np.maximum(0, Dr)
+    
+        
+    
+    kcmax = rt_copy["kcmax"]
+    zr = rt_copy["zr"]
+    
+    #definiraj lastnosti za tip tal 
+    tip_tal =  pd.read_csv(pot_tip_tal, sep = "\t", index_col = "Id")
+        
+    θz = tip_tal["0z"][y1]
+    θpk = tip_tal["0pk"][y1]
+    θtv = tip_tal["0tv"][y1]
+
+    θpk10 = tip_tal["0pk10"][y1]
+    θtv10 = tip_tal["0tv10"][y1]
+    
+    #Definiraj spremenljivko za padavine
+    pad = pd.read_csv(pot_pad, sep = "\t",encoding ="ISO-8859-1")
+    p = pad["padavine"]
+    p[184:548]=p[184:548]*0.9
+
+    #Definiraj spremenljivko za vhodne podatke za izračun ereferenčne evapotranspiracije
+    Radenci_E = pd.read_csv(pot_evap, index_col = 0, sep = "\t", 
+                          parse_dates = True,encoding ="ISO-8859-1" )
+    
+    #Izračunaj referencno evapotranspiracijo 
+    et0 = Et0(Radenci_E)
+    
+    #Definiraj spremenljivke za zapis izhodnih podatkov 
+    Inf = []
+    Kc = []
+    E_d = []
+    N_gw = []
+    Se = []
+    θ_e = []
+    
+    #Določi začetni pogoj vsebnosti vode v tleh
+    θe = ((θpk+θtv)/2)
+
+    for i in range(0, len(p)):
+        sz = θz * zr[i]
+        spk = θpk * zr[i]
+        stv = θtv * zr[i]
+        se = θe * zr[i]
+        
+        
+        
+        θliv = (θpk10+θtv10)/ 2
+        sldv = (spk+stv)/2
+    
+        #dez = Ce so tla nasicena, je infiltracija enaka St - Pk
+        if se + p[i] > sz:
+            inf = sz-se
+        else:
+            inf = p[i]
+            
+     
+        #Ce je vsebnost vode nizja kot Pk, se Kr racuna po spodnji formuli
+        if θe > θliv:
+            kr = 1
+        else:
+            kr = (θe-θtv)/(θliv-θtv)
+            
+        #Če je vode manj kot je lahko dostopne vode, se racuna ks po spodnji enacbi 
+        if se > sldv:
+            ks = 1
+        else:
+            ks = (se-stv)/(sldv-stv)
+            
+        #Izračun evaporacijskega koeficienta rastline    
+        ke = min(kr * (kcmax[i]-kcb[i]), kcmax[i]-kcb[i])
+        
+        #Izračun koeficienta rastline
+        kc = ks * kcb[i] + ke   
+    
+        # Ce je vsebnost vode nizja kot Tv je etca = 0
+        if se <= stv:
+            kc = 0
+        else:    
+            if kc > kcmax[i]:
+                kc = kcmax[i]
+            else:
+                kc = kc
+        
+        #Izracun dejanske evapotranspiracije
+        Ed = kc * et0[i]
+        
+        #Če je vsebnost vode višja kot poljska kapaciteta pride do namakanja
+        
+        if  se + inf - Ed < spk:
+            Ngw = 0
+        else: 
+            Ngw = se + inf - Ed - spk
+        
+        #Vsebnost vode ne more pasti pod točko venenja
+        se = max(se + inf - Ed - Ngw, stv)
+        
+        if se > sz:
+            se = sz
+        else: 
+            pass
+        
+
+    
+        θe = se / zr[i] 
+
+
+#-------------------------------------------------------------#Definicija funkcije za branje podatkov rabe tal
+#-------------------------------------------------------------
+def find_kt(pot):
+    """Funkcija prebere vse datoteko v definirani poti in na podlagi njih v pythonu
+    definira parametre za bazalni koeficient rastline kcb, maksimalno vrednost 
+    koeficienta rastline kcmax in globino korenin za vsak dan v podanem obdobju.
+    
+    Vhodni podatki:
+        pot: pot do mape, kjer se nahajajo tabele z vrednostmi kcb, kcmax in globino korenin.
+            - tabele so v obliki .txt datotek, ločene s tabulatorjem. 
+            - stolpci tabele imajo ime "kcb", "kcmax" in "zr" (globina korenin)
+            
+     Funkcije vrne dataframe z dnevnimi vrednostmi kcb, kcmax in zr."""
+    os.chdir(pot)
+    filelist = os.listdir()
+    files = [f for f in os.listdir(pot) if os.path.isfile(f)]
+    dataframes = []
+
+    for filename in filelist:
+        dataframes.append(pd.read_csv(filename, sep = "\t",encoding = "ISO-8859-1"))
+        
+    return dataframes
+
+#-------------------------------------------------------------
+#Definicija funkcije za izracun napajanja podzemne vode
+#-------------------------------------------------------------
+def hidrotop(pot_pad, pot_evap, hidrotop, land_use, pot_tip_tal):
+    """Funkcija izracuna dnevno vsebnost vode v tleh, infiltracijo v nezasicen 
+        del na dan i, dejansko evapotranspiracija na dan i in napajanje podzemne
+        vode na dan i.
+    
+    Vhodni podatki:
+        epad: razpredelnica s podatki padavin [mm]
+        epot: razpredelnica s vhodnimi podatki za izracun referencne evapotranspiracije,
+        opisane v definiciji Et0.
+        hidrotop: razpredelnica z ID stevilko hidrotopa, rabe tal in tipa tal
+        potrt: pot do mape, kjer se nahajajo tabele z vrednostmi kcb, kcmax in zr 
+        (opisano v funkciji "najdi_kt"), za posamezen razred rabe tal. 
+        pottt: pot do datoteke, ki vsebuje podatke o vodnozadrzevalnih lastnoti tal za
+        posamezen tip tal
+                    
+     Funkcije vrne dnevne vrednosti infiltracije, koeficienta rastline, zacetne vsebnosti
+     vode na dan i, koncne vsebnosti vode na dan i, dejansko evapotranspiracijo na dan i
+     in kolicino napajanja podzemne vode na dan i"""
+     
+    #definiraj ID stevilki za rabo tal in tip tal
+    x1 = hidrotop[0]   #raba tal
+    y1 = hidrotop[1]   #tip tal 
+    
+    #definiraj lastnosti rabe tal(rt), kcb, kcmmax, globina korenin
+    dataframes = land_use
+    rt = dataframes[int(x1-1)]
+    rt_copy = rt.copy()
+    kcb = rt_copy["kcb"]
+    kcmax = rt_copy["kcmax"]
+    zr = rt_copy["zr"]
+    
+    #definiraj lastnosti za tip tal 
+    tip_tal =  pd.read_csv(pot_tip_tal, sep = "\t", index_col = "Id")
+        
+    θz = tip_tal["0z"][y1]
+    θpk = tip_tal["0pk"][y1]
+    θtv = tip_tal["0tv"][y1]
+
+    θpk10 = tip_tal["0pk10"][y1]
+    θtv10 = tip_tal["0tv10"][y1]
+    
+    #Definiraj spremenljivko za padavine
+    pad = pd.read_csv(pot_pad, sep = "\t",encoding ="ISO-8859-1")
+    p = pad["padavine"]
+    p[184:548]=p[184:548]*0.9
+
+    #Definiraj spremenljivko za vhodne podatke za izračun ereferenčne evapotranspiracije
+    Radenci_E = pd.read_csv(pot_evap, index_col = 0, sep = "\t", 
+                          parse_dates = True,encoding ="ISO-8859-1" )
+    
+    #Izračunaj referencno evapotranspiracijo 
+    et0 = Et0(Radenci_E)
+    
+    #Definiraj spremenljivke za zapis izhodnih podatkov 
+    Inf = []
+    Kc = []
+    E_d = []
+    N_gw = []
+    Se = []
+    θ_e = []
+    
+    #Določi začetni pogoj vsebnosti vode v tleh
+    θe = ((θpk+θtv)/2)
+
+    for i in range(0, len(p)):
+        sz = θz * zr[i]
+        spk = θpk * zr[i]
+        stv = θtv * zr[i]
+        se = θe * zr[i]
+        
+        
+        
+        θliv = (θpk10+θtv10)/ 2
+        sldv = (spk+stv)/2
+    
+        #dez = Ce so tla nasicena, je infiltracija enaka St - Pk
+        if se + p[i] > sz:
+            inf = sz-se
+        else:
+            inf = p[i]
+            
+     
+        #Ce je vsebnost vode nizja kot Pk, se Kr racuna po spodnji formuli
+        if θe > θliv:
+            kr = 1
+        else:
+            kr = (θe-θtv)/(θliv-θtv)
+            
+        #Če je vode manj kot je lahko dostopne vode, se racuna ks po spodnji enacbi 
+        if se > sldv:
+            ks = 1
+        else:
+            ks = (se-stv)/(sldv-stv)
+            
+        #Izračun evaporacijskega koeficienta rastline    
+        ke = min(kr * (kcmax[i]-kcb[i]), kcmax[i]-kcb[i])
+        
+        #Izračun koeficienta rastline
+        kc = ks * kcb[i] + ke   
+    
+        # Ce je vsebnost vode nizja kot Tv je etca = 0
+        if se <= stv:
+            kc = 0
+        else:    
+            if kc > kcmax[i]:
+                kc = kcmax[i]
+            else:
+                kc = kc
+        
+        #Izracun dejanske evapotranspiracije
+        Ed = kc * et0[i]
+        
+        #Če je vsebnost vode višja kot poljska kapaciteta pride do namakanja
+        
+        if  se + inf - Ed < spk:
+            Ngw = 0
+        else: 
+            Ngw = se + inf - Ed - spk
+        
+        #Vsebnost vode ne more pasti pod točko venenja
+        se = max(se + inf - Ed - Ngw, stv)
+        
+        if se > sz:
+            se = sz
+        else: 
+            pass
+        
+
+    
+        θe = se / zr[i] 
+        
+        Inf.append(inf)
+        Kc.append(kc)
+        E_d.append(Ed)
+        N_gw.append(Ngw)  
+        Se.append(se)
+        θ_e.append(θe)
+
+    return Inf, Kc, E_d, N_gw, Se, θ_e
+
+#-------------------------------------------------------------
+#Definicija funkcije za izracun napajanja podzemne vode na urbanih območjih
+#-------------------------------------------------------------
+
+def urbano(pot_pad, pot_evap, hidrotop, pot_raba_tal, pot_tip_tal):
+    """Funkcija izracuna dnevno vsebnost vode v tleh, infiltracijo v nezasicen 
+    del na dan i, dejansko evapotranspiracija na dan i in napajanje podzemne vode
+    na dan i, za urbano območje.
+    
+    Vhodni podatki:
+        epad: razpredelnica s podatki padavin [mm]
+        epot: razpredelnica s vhodnimi podatki za izracun referencne evapotranspiracije,
+        opisane v definiciji Et0.
+        hidrotop: razpredelnica z ID stevilko hidrotopa, rabe tal in tipa tal
+        potrt: pot do mape, kjer se nahajajo tabele z vrednostmi kcb, kcmax in zr 
+        (opisano v funkciji "najdi_kt"), za posamezen razred rabe tal. 
+        pottt: pot do datoteke, ki vsebuje podatke o vodnozadrzevalnih lastnoti tal za
+        posamezen tip tal
+            
+            
+     Funkcije vrne dnevne vrednosti infiltracije, koeficienta rastline, zacetne vsebnosti
+     vode na dan i, koncne vsebnosti vode na dan i, dejansko evapotranspiracijo na dan i
+     in kolicino napajanja podzemne vode na dan i."""
+    #definiraj ID stevilki za rabo tal in tip tal
+    x1 = hidrotop[0]   #raba tal
+    y1 = hidrotop[1]   #tip tal 
+    
+    #definiraj lastnosti rabe tal, kcb, kcmmax, globina korenin
+    dataframes = najdi_kt(pot_raba_tal)
+    rt = dataframes[int(x1-1)]
+    rt_copy = rt.copy()
+    kcb = rt_copy["kcb"]
+    kcmax = rt_copy["kcmax"]
+    zr = rt_copy["zr"]
+    
+    #definiraj lastnosti za tip tal 
+    tip_tal =  pd.read_csv(pot_tip_tal, sep = "\t", index_col = "Id")
+    
+    θz = tip_tal["0z"][y1]
+    θpk = tip_tal["0pk"][y1]
+    θtv = tip_tal["0tv"][y1]
+
+    θpk10 = tip_tal["0pk10"][y1]
+    θtv10 = tip_tal["0tv10"][y1]
+    
+    #definiraj spremenljivko za padavine
+    pad = pd.read_csv(pot_pad, sep = "\t",encoding ="ISO-8859-1")
+    p = pad["padavine"] 
+    p[184:548]=p[184:548]*0.9
+    #definiraj spremenljivko za vhodne podatke referenčne evapotranspiracije
+    Radenci = pd.read_csv(pot_evap, index_col = 0, sep = "\t", 
+                          parse_dates = True,encoding ="ISO-8859-1" )
+    
+    #Izračunaj referencno evapotranspiracijo 
+    et0 = Et0(Radenci)
+     
+    #Definiraj spremenljivke za zapis izhodnih podatkov 
+    Inf = []
+    Kc = []
+    E_d = []
+    N_gw = []
+    Se = []
+    θ_e = []
+    
+    #Določi začetni pogoj vsebnosti vode v tleh
+    θe = ((θpk+θtv)/2)
+    
+    for i in range(0, len(p)):
+        sz = θz * zr[i]
+        spk = θpk * zr[i]
+        stv = θtv * zr[i]
+        se = θe * zr[i]
+        
+        θliv = (θpk10+θtv10)/ 2
+        sldv = (spk+stv)/2
+        purb = p[i]*0.8
+        dp1 = p[i] * 0.1
+        
+        #dez = Ce so tla nasicena, je infiltracija enaka sSt - sPk
+        if se + purb > sz:
+            inf = sz-se
+        else:
+            inf = purb
+
+
+        #Ce je vsebnost vode nizja kot Pk, se Kr racuna po spodnji formuli
+        if θe > θliv:
+            kr = 1
+        else:
+            kr = (θe-θtv)/(θliv-θtv)
+            
+        #Če je vode manj kot je lahko dostopne vode, se racuna ks po spodnji enacbi 
+        
+        if se > sldv:
+            ks = 1
+        else:
+            ks = (se-stv)/(sldv-stv)    
+            
+        #Izračun evaporacijskega koeficienta rastline    
+        ke = min(kr * (kcmax[i]-kcb[i]), kcmax[i]-kcb[i])
+        
+        #Izračun koeficienta rastline
+        kc = ks * kcb[i] + ke   
+    
+        # Ce je vsebnost vode nizja kot Tv je etca = 0
+        if se <= stv:
+            kc = 0
+        else:    
+            if kc > kcmax[i]:
+                kc = kcmax[i]
+            else:
+                kc = kc
+        
+        #Izracun dejanske evapotranspiracije
+        Ed = kc * et0[i] * 0.8
+        
+        
+        #Če je vsebnost vode višja kot poljska kapaciteta pride do namakanja
+        
+        if  se + inf - Ed < spk:
+            Ngw = 0
+        else: 
+            Ngw = se + inf - Ed - spk + dp1
+        
+        #Vsebnost vode ne more pasti pod točko venenja
+        se = max(se + inf - Ed - Ngw, stv)
+        
+        #Izračun absolutne vsebnosti vode na dan i, ki ne more biti večja od točke zasičenja
+        if se > sz:
+            se = sz
+        else: 
+            pass
+        
+        # Izracun vsebnosti vode na dan i
+        θe = se / zr[i] 
+        
+        Inf.append(inf)
+        Kc.append(kc)
+        E_d.append(Ed)
+        N_gw.append(Ngw)  
+        Se.append(se)
+        θ_e.append(θe)
+
+    return Inf, Kc, E_d, N_gw, Se, θ_e
+
+
+
+#-------------------------------------
+#Odpri shapefile datoteko
+#------------------------------------
+dbf = Dbf5("C:\\Apasko_polje_GWET\hidrotopi\\hidrotopi.dbf")
+
+df = dbf.to_dataframe()
+
+df = df.set_index("ID")
+
+#Definicija poti do tabele s padavinami
+Podgorje = "C:\\Apasko_polje_GWET\\padavine\\padavine_Podgorje.txt" 
+Radenci = "C:\\Apasko_polje_GWET\\padavine\\padavine_Radenci.txt"
+
+meteo = pd.read_csv("C:\Matevz_arbeit\Apasko_polje_GWET\E0\\Radenci.txt", 
+                    delimiter = "\t",index_col = 0)
+
+m = meteo["T_min"].to_numpy()
+#Definicija poti do tabele s podatki za vodnozadrzevalni lastnosti posameznega razreda tipa tal
+pot_tt = "C:\\Apasko_polje_GWET\\tip_tal\\tla.txt"
+
+#Definicija poti do mape s podatki kcb, kcmax in globino korenin za posamezen razred rabe tal 
+land_use = find_kt("C:\Matevz_arbeit\Apasko_polje_GWET\\raba")
+
+
+#-------------------------------------
+#Zanka za izračun vodne-bilance posameznega hidrotopa v shapefile vhodni datoteki
+#-------------------------------------
+
+napajanje = {}
+
+for index, row in df.iterrows():
+    #Določitev podatkov padavinske postaje
+    if row[2] == 1:
+        potpad = Podgorje
+    else:
+        potpad = Radenci
+        
+    if row[0]<7:
+        cd = [row[0], row[1]]
+        Inf, Kc, E_d, N_gw, Se, θ_e = hidrotop(potpad, Evap,cd, pot_rt, pot_tt)
+        napajanje[index] = N_gw
+    elif row[0] == 9:
+        cd = [5, row[1]]
+        Inf, Kc, E_d, N_gw, Se, θ_e = urbano(potpad, Evap,cd, pot_rt, pot_tt)
+        napajanje[index] = N_gw
+    elif row[0] == 11:
+        napajanje[index] = np.zeros_like(N_gw)
+
+
+
+
+#Določitev časovnega obdobja 
+
+df_index = pd.date_range(start='7/1/2013', end='6/30/2018')
+napajanje_df = pd.DataFrame.from_dict(napajanje)
+napajanje_df.index = df_index
+
+
+##Pretvorba v mesečne in letne vrednosti
+#mesecno = napajanje_df.resample("M").sum()
+#letno = napajanje_df.resample("Y").sum()
+#
+dnevno_csv = napajanje_df.transpose()
+#dnevno_csv.to_csv("C:\\Magistrska\\predstavitev\\dnevni_rezultati.csv")
+mesecno = napajanje_df.resample("M").sum()
+mesecno_csv = mesecno.transpose()
+mesecno_csv.to_csv("C:\\Magistrska\\predstavitev\\mesecne\\GWET_tabela\\mesecni.csv")
+#letno_csv = letno.transpose()
+#letno_csv.to_csv("C:\\Apasko_polje_GWET_\\napajanje_rezultati\\napajanje_rezultati.csv")
+#
+#
+#
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+cd = [2, 406]
+Inf, Kc, E_d, N_gw, Se, θ_e = hidrotop(Podgorje, Evap,cd, pot_rt, pot_tt)
+Inf_d = pd.DataFrame(Inf, df_index)
+Inf_m = Inf_d.resample("M").sum()
+Kc_d = pd.DataFrame(Kc, df_index)
+Ed_d = pd.DataFrame(E_d, df_index)
+Ed_m = Ed_d.resample("M").sum()
+θe_d = pd.DataFrame(θ_e, df_index)
+θe_m = θe_d.resample("M").mean()
+Se_d = pd.DataFrame(Se, df_index)
+Se_m = Se_d.resample("M").mean()
+Ngw_d = pd.DataFrame(N_gw, df_index)
+Ngw_m = Ngw_d.resample("M").sum()
+Se_m.plot()
+
+
+
+
+
+
