@@ -85,4 +85,5 @@ def fao_pm(lista):
           (kzp + psi * (1 + 0.34 * veter))
 
     e = pd.DataFrame(data={"et0": et0}, index=lista_copy.index)
+    e = e.to_numpy()
     return e

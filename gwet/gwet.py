@@ -1,88 +1,99 @@
 # Uporabljene Python knjižnice
-import os
-import time
-
-import pandas as pd
-from simpledbf import Dbf5
 import numpy as np
 from gwet.et_ref import fao_pm
+from gwet.infiltration import inf
 
-import gwet.pet
+import gwet.dual_crop
 
-def balance(lista, precip):
-    lista_copy = lista.copy()
-    tmin = lista["tmin"].to_numpy()
-    tmax = lista["tmax"].to_numpy()
+def wbalance(lista, precip, qfc, qwp, qs, qfc10, qwp10):
+
     rhmin = lista["rhmin"].to_numpy()
-    rhmax = lista["rhmax"].to_numpy()
     wind = lista["wind"].to_numpy()
-    solar = lista["solar"].to_numpy()
     precip = precip.copy().to_numpy()
 
     h = 0.8  # Height of crop
     ze = 0.1  # Top surface soil depth
-    zr = 0.4  #  Root depth
-    p = 0.5  #  Check for grasslands
-    # ET0 calculation
-    et0 = fao_pm(lista)
+    zr = 0.4  # Root depth
+    p = 0.55  # Check for grasslands
+
+    et0 = fao_pm(lista)  # ET0 calculation
 
     kc_ini = 1
     kcb_mid = 1
     kc_end = 1
 
+    kcb = np.full(len(wind),1)  # Kcb-crop coefficient
 
-    kcb = np.full(len(wind), 1)
-    kcmin = np.full(len(wind), 0.15)
+    etc = kcb * et0  # Potential evapotranspiration
 
-    kcmax = gwet.pet.kc_max(wind, rhmin, h, kcb)
-    fc = gwet.pet.fc(kcb, kcmax, kcmin, h)
+    # ------------------------------------------------------------------------
+    # Dual crop coefficient
+    kcmax = gwet.dual_crop.kc_max(wind, rhmin, h, kcb)
+    kcmin = 0.15
+
+    fc = gwet.dual_crop.fc(kcb, kcmax, kcmin, h)
 
     fw = 1  # From table
 
     few = np.minimum(1-fc, fw)
 
-    ro  = precip * 0.1  #  Surface runoff
-
-    etc = kcb * et0  #  potential evapotranspiration
+    dr_old = 1000 * (qfc + qwp)/2 * zr
+    de_old = 1000 * (qfc10 + qwp10)/2 * ze
+    dr_data = []
+    de_data = []
+    eta_data = []
+    dp_data = []
     for i in range(len(precip)):  # Start of the Balance
         # --------------------------------------------------------------------
         #  Surface water balance
-        des_ old = des
-        tew = 1000 * (sfc - 0.5 * swp) * ze
-        rew = tew/2
-        if des_old > rew:
-            kr = (tew-des_old)/(tew-rew)
+        tew = 1000 * (qfc10 - 0.5 * qwp10) * ze
+        rew = tew * p
+
+        inf_d = inf(precip[i], de_old, qs)
+
+        if precip[i] > 0:
+            kr = 1
         else:
-            kr = 1  # Check this
+            if de_old > rew:
+                kr = (tew-de_old)/(tew-rew)
+            else:
+                kr = 1  # Check this
 
-        if precip[i] > 0:  # Calculate kr
-            ke = np.minimum(kr(kcmax[i]-kcb[i]), (1-fc)*kcmax)  # CHeck this
-        else:
-            kr = np.minimum(kr(kcmax[i]-kcb[i]), few*kcmax)  # CHeck this
+        ke = np.minimum(kr * (kcmax[i] - kcb[i]), few[i] * kcmax[i])  # CHeck
 
-        des = des_old - (precip[i] - ro[i]) - et[i]
-        des = np.maximum(des, tew)
-        des = np.minimum(des, 0)
+        evaporation = ke * et0[i]
+        transpiration = 0  # From FAO - if shalllow rooted crops then change
+        dpe = inf_d - de_old
 
+        de = de_old - inf_d + evaporation / few[i] + transpiration + dpe
+
+        de = np.maximum(de, tew)
+        de = np.minimum(de, 0)
+        de_old = de
         # --------------------------------------------------------------------
         #  Soil profile water balance
-        taw = 1000*(sfc-swp)*zr
+        taw = 1000*(qfc - qwp) * zr
         raw = taw * p
-        if de_old > raw:
-            ks = (taw-de_old)/(taw-raw)
+        if precip[i] > 0:
+            ks = 1
         else:
-            ks = 1  # Check this
+            if dr_old > raw:
+                ks = (taw-dr_old)/(taw-raw)
+            else:
+                ks = 1  # Check this
 
         eta = et0[i] * (kcb[i]*ks + ke)
 
-        dpe = np.maximum(d_old - (precip[i]-ro[i]) - eta - de_old, 0)
+        dp = np.maximum(dr_old - inf_d - eta - dr_old, 0)
 
-        de = de_old - (precip[i]-ro[i]) + eta + dpe
-        de = np.maximum(de, taw)
-        de = np.minimum(de, 0)
+        dr = dr_old - inf_d + eta + dp
+        dr = np.maximum(dr, taw)
+        dr = np.minimum(dr, 0)
+        dr_old = dr
 
-    ke = []
-    for
+        dr_data.extend(dr)
+        de_data.extend(de)
+        eta_data.extend(eta)
+        dp_data.extend(dp)
 
-
-    return et0, kcmax, fc
+    return et0, kcmax, fc, etc, dr_data, de_data, eta_data, dp_data
