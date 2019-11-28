@@ -7,7 +7,7 @@ This software is licenced under the GNU GENERAL PUBLIC LICENSE found [here](http
 # Examples and Documentation
 Examples of using Gwet can be found in the examples folder. This folder 
 also contains a number of Jupyter Notebooks that thoroughly explain the use 
-of the software. Documentation is provided on a dedicated ReadTheDocs site.
+of the software. Documentation is provided in the citing documents.
 
 # Installing the package
 
