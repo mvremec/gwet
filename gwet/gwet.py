@@ -124,7 +124,7 @@ def wbalance(meteo,precip,soil,landuse):
 
     return eta_data, dp_data, ks_data, inf_data, dr_old_data, ke_data
 
-def urban_balance(meteo, precip, soil, landuse):
+def urban_balance(meteo,precip,soil,landuse):
     """FAO water balance approach following the dual crop coefficient approach
     with the usage of the water stress coefficient for urban areas.
 
@@ -265,25 +265,22 @@ def hydrotop(hydrotops, precip, meteo, land_use, soil_prop):
     actual_et = {}
     recharge = {}
     for index, row in hydrotops.iterrows():
-        print(row[0])
-        print(row[1])
-        print(row[2])
-        precip_data = precip[row[0]]
-        soil_data = soil_prop.loc[row[2]].to_numpy()
-        landuse_data = land_use[str(row[1])]
-        if row[1] < 7:
+        landuse_data = land_use[str(row[0])] 
+        soil_data = soil_prop.loc[row[1]].to_numpy()
+        precip_data = precip[str(row[2])]
+        if row[0] <= 8:
             eta_data, dp_data, ks_data, inf_data, dr_old_data, ke_data = \
                 wbalance(meteo, precip_data, soil_data, landuse_data)
             recharge[index] = dp_data
             actual_et[index] = eta_data
         elif row[0] == 9:
             eta_data, dp_data, ks_data, inf_data, dr_old_data, ke_data = \
-                urban_balance(meteo, precip, soil_data, landuse_data)
+                urban_balance(meteo, precip_data, soil_data, landuse_data)
             recharge[index] = dp_data
             actual_et[index] = eta_data
         elif row[0] == 11:
-            recharge[index] = np.zeros_like(precip_data)
-            actual_et[index] = np.zeros_like(precip_data)
+            recharge[index] = [0.001] * len(precip_data)
+            actual_et[index] = [0.001] * len(precip_data)
     recharge_df = pd.DataFrame(data=recharge, index=precip_data.index)
     actual_et_df = pd.DataFrame(data=actual_et, index=precip_data.index)
     return recharge_df, actual_et_df

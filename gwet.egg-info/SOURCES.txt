@@ -1,0 +1,7 @@
+README.md
+example.py
+setup.py
+gwet.egg-info/PKG-INFO
+gwet.egg-info/SOURCES.txt
+gwet.egg-info/dependency_links.txt
+gwet.egg-info/top_level.txt
