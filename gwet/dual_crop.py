@@ -13,3 +13,12 @@ def fc(kcb, kcmax, kcmin, h):
     fc = np.minimum(fc, 1)
     fc = np.maximum(fc, 0)
     return fc
+
+def calc_kr(precip, de_old, rew, tew):
+    if precip > 0:
+        return 1
+    else:
+        if rew < de_old < tew:
+            return (tew-de_old)/(tew-rew)
+        else:
+            return 0  # Check this
