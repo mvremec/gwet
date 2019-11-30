@@ -1,7 +1,7 @@
 <img src=https://user-images.githubusercontent.com/45821544/69825305-12f3d300-120f-11ea-9fe9-5091453d3d9f.png width=450, align=right>
 
 # gwet
-The package provides methods to calculate the daily water balance of multiple hydrotopes following FAO(Food and Agriculture Organization of the United Nations) guidelines. The approach is based on the dual crop coefficient and water stress coefficent approach. More information of the FAO guidelines is available [here](http://www.fao.org/3/X0490E/X0490E00.htm). 
+The package provides methods to calculate the daily water balance of multiple hydrotopes following FAO(Food and Agriculture Organization of the United Nations) guidelines. The approach is based on the dual crop coefficient and water stress coefficent approach. More information of the FAO guidelines are available [here](http://www.fao.org/3/X0490E/X0490E00.htm). 
 
 This software is licenced under the GNU GENERAL PUBLIC LICENSE found [here](http://www.gnu.org/licenses/gpl-3.0.txt).
 
